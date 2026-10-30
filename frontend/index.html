@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CivicAI – Smart Cities. Smarter Decisions. Faster Resolutions.</title>
+  <meta name="description" content="AI-Powered Municipal Civic Issue Management Platform with automated NLP classification, semantic duplicate detection, explainable priority scoring, and DBSCAN geographic hotspot intelligence.">
+  <meta name="theme-color" content="#0a1128">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            civic: {
+              navy: '#0a1128',
+              blue: '#1c3d5a',
+              cyan: '#00b4d8',
+              teal: '#06d6a0',
+              surface: '#131d35'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Leaflet CSS & JS for Interactive Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Chart.js CDN for Interactive Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="bg-[#0b1120] text-slate-100 min-h-screen flex flex-col font-sans selection:bg-cyan-500 selection:text-slate-950">
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-md w-full pointer-events-none *:pointer-events-auto"></div>
+
+  <!-- ============================================================= -->
+  <!-- GLOBAL ENTERPRISE NAVIGATION BAR -->
+  <!-- ============================================================= -->
+  <header class="sticky top-0 z-40 glass-nav border-b border-slate-800/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="CivicAI.navigateTo('landing')">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-glow text-xl">
+          🏛️
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-xl font-extrabold tracking-tight text-white font-sans">Civic<span class="gradient-text-cyan">AI</span></span>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-950 text-cyan-400 border border-cyan-800">ENTERPRISE</span>
+          </div>
+          <span class="text-[10px] text-slate-400 block -mt-1 hidden sm:block">Smart Civic Management</span>
+        </div>
+      </div>
+
+      <!-- Main Navigation Links -->
+      <nav class="hidden md:flex items-center gap-1 text-sm font-medium">
+        <button id="nav-link-landing" onclick="CivicAI.navigateTo('landing')" class="portal-nav-btn px-3 py-2 rounded-lg text-cyan-400 border-b-2 border-cyan-400 transition-colors">
+          Home
+        </button>
+        <button id="nav-link-citizen" onclick="CivicAI.navigateTo('citizen')" class="portal-nav-btn px-3 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition-colors">
+          Citizen Portal
+        </button>
+        <button id="nav-link-admin" onclick="CivicAI.navigateTo('admin')" class="portal-nav-btn px-3 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition-colors">
+          Admin Center
+        </button>
+        <button id="nav-link-officer" onclick="CivicAI.navigateTo('officer')" class="portal-nav-btn px-3 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition-colors">
+          Field Officer
+        </button>
+        <button id="nav-link-map" onclick="CivicAI.navigateTo('map'); setTimeout(() => MapViewController.load(), 100);" class="portal-nav-btn px-3 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1">
+          <span>🗺️</span> City Map
+        </button>
+        <button id="nav-link-tracker" onclick="CivicAI.navigateTo('tracker')" class="portal-nav-btn px-3 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition-colors">
+          Track Issue
+        </button>
+      </nav>
+
+      <!-- Right Actions: Demo Switcher, Theme, Notifications, Auth -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        
+        <!-- 1-Click Role Switcher Dropdown (Essential for instant evaluation) -->
+        <div class="relative group">
+          <button class="px-2.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-cyan-300 flex items-center gap-1.5 transition-all">
+            <span>⚡ Demo Roles</span>
+            <span class="text-[10px]">▼</span>
+          </button>
+          <div class="absolute right-0 mt-2 w-52 glass-panel p-2 shadow-2xl rounded-xl hidden group-hover:block border border-slate-700 fade-in z-50">
+            <div class="text-[10px] font-bold text-slate-400 px-2 py-1 uppercase tracking-wider">Instant Role Switcher</div>
+            <button onclick="CivicAI.quickLoginAs('admin')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800 text-xs text-red-400 font-medium flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-red-500"></span> Municipal Admin
+            </button>
+            <button onclick="CivicAI.quickLoginAs('officer')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800 text-xs text-amber-400 font-medium flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span> Field Officer (John)
+            </button>
+            <button onclick="CivicAI.quickLoginAs('citizen')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-800 text-xs text-cyan-400 font-medium flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-cyan-500"></span> Citizen (Alice)
+            </button>
+          </div>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button id="theme-toggle-btn" onclick="CivicAI.toggleTheme()" class="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition-colors" title="Toggle Light/Dark Theme">
+          🌙
+        </button>
+
+        <!-- Notification Bell -->
+        <div class="relative">
+          <button onclick="document.getElementById('notif-dropdown')?.classList.toggle('hidden')" class="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 relative transition-colors">
+            🔔
+            <span id="notif-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center hidden">0</span>
+          </button>
+          <!-- Notification Dropdown -->
+          <div id="notif-dropdown" class="hidden absolute right-0 mt-2 w-80 glass-panel p-3 shadow-2xl rounded-2xl border border-slate-700 z-50 fade-in">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800 text-xs">
+              <span class="font-bold text-slate-200">Municipal Notifications</span>
+              <button onclick="CivicAI.apiFetch('/notifications/read-all', { method: 'POST' }).then(() => CivicAI.fetchNotificationsCount()); CivicAI.toast('Marked all as read', 'info');" class="text-cyan-400 hover:underline">Mark all read</button>
+            </div>
+            <div id="notif-list" class="max-h-64 overflow-y-auto py-2 space-y-2 text-xs text-slate-300">
+              <div class="p-2 text-center text-slate-500 text-xs">No unread notifications</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auth Buttons (Logged Out) -->
+        <div id="nav-auth-actions" class="flex items-center gap-2">
+          <button onclick="CivicAI.openAuthModal('citizen')" class="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md transition-all">
+            Sign In
+          </button>
+        </div>
+
+        <!-- User Menu (Logged In) -->
+        <div id="nav-user-menu" class="hidden flex items-center gap-2">
+          <div class="text-right hidden sm:block">
+            <span id="nav-user-name" class="text-xs font-bold text-slate-200 block truncate max-w-[120px]">User</span>
+            <span id="nav-user-role" class="px-2 py-0.5 rounded text-[10px] font-bold">ROLE</span>
+          </div>
+          <button onclick="CivicAI.logout()" class="p-2 rounded-lg bg-slate-800 hover:bg-red-950/60 hover:text-red-400 text-slate-400 text-xs transition-colors" title="Logout">
+            🚪
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================= -->
+  <!-- MAIN CONTENT SECTIONS (ROUTED VIEWS) -->
+  <!-- ============================================================= -->
+  <main class="flex-1">
+
+    <!-- =========================================================== -->
+    <!-- VIEW 1: PUBLIC LANDING PAGE -->
+    <!-- =========================================================== -->
+    <section id="view-landing" class="view-section">
+      <!-- Hero Section -->
+      <div class="relative overflow-hidden py-16 sm:py-24 border-b border-slate-800/80 bg-gradient-to-b from-[#0b1120] via-[#0e172a] to-[#0b1120]">
+        <!-- Animated Backdrop Elements -->
+        <div class="absolute -top-40 -left-40 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute top-1/2 -right-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-950/60 border border-cyan-800 text-cyan-300 text-xs font-semibold mb-6 shadow-glow">
+            <span>✨</span> Next-Generation AI Municipal Operating System
+          </div>
+
+          <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+            Smart Cities. <span class="gradient-text-cyan">Smarter Decisions.</span><br/>
+            Faster Resolutions.
+          </h1>
+
+          <p class="max-w-3xl mx-auto text-base sm:text-xl text-slate-300 font-normal mb-8 leading-relaxed">
+            CivicAI bridges citizens, field inspectors, and city commissioners through explainable AI triage,
+            DBSCAN hotspot detection, and automated dispatch workflows.
+          </p>
+
+          <!-- Functional Call-to-Action Buttons -->
+          <div class="flex flex-wrap items-center justify-center gap-4 mb-12">
+            <button onclick="CivicAI.navigateTo('citizen')" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-sm shadow-glow transition-all hover:scale-105">
+              🚀 Report an Issue Now
+            </button>
+            <button onclick="CivicAI.navigateTo('map'); setTimeout(() => MapViewController.load(), 100);" class="px-6 py-3.5 rounded-xl glass-panel hover:bg-slate-800/80 text-white font-bold text-sm border border-slate-700 transition-all flex items-center gap-2">
+              <span>🗺️</span> Explore Live City Map
+            </button>
+            <button onclick="CivicAI.quickLoginAs('admin')" class="px-6 py-3.5 rounded-xl bg-red-950/50 hover:bg-red-900/60 text-red-300 border border-red-500/40 font-bold text-sm transition-all">
+              🛡️ Admin Control Center
+            </button>
+          </div>
+
+          <!-- Quick Issue Tracker Bar -->
+          <div class="max-w-xl mx-auto glass-panel p-2 rounded-2xl border border-cyan-500/30 flex items-center gap-2 shadow-2xl">
+            <span class="pl-3 text-slate-400 text-sm">🔍</span>
+            <input type="text" id="hero-quick-track-input" placeholder="Track complaint (e.g. CIV-2026-1000)..." class="flex-1 bg-transparent border-none text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none">
+            <button onclick="LandingController.quickTrack()" class="px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs sm:text-sm transition-all">
+              Track Status
+            </button>
+          </div>
+
+          <!-- Live Municipal Stats Strip (Database-backed) -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-16 max-w-5xl mx-auto">
+            <div class="glass-panel p-5 rounded-2xl border border-slate-800 text-center">
+              <div id="stat-total-reports" class="text-3xl font-extrabold text-cyan-400 font-mono">54</div>
+              <div class="text-xs text-slate-400 mt-1 uppercase font-semibold">Total Complaints Filed</div>
+            </div>
+            <div class="glass-panel p-5 rounded-2xl border border-slate-800 text-center">
+              <div id="stat-resolved-reports" class="text-3xl font-extrabold text-emerald-400 font-mono">31</div>
+              <div class="text-xs text-slate-400 mt-1 uppercase font-semibold">Issues Restored</div>
+            </div>
+            <div class="glass-panel p-5 rounded-2xl border border-slate-800 text-center">
+              <div id="stat-resolution-rate" class="text-3xl font-extrabold text-blue-400 font-mono">57.4%</div>
+              <div class="text-xs text-slate-400 mt-1 uppercase font-semibold">Resolution Rate</div>
+            </div>
+            <div class="glass-panel p-5 rounded-2xl border border-slate-800 text-center">
+              <div id="stat-avg-time" class="text-3xl font-extrabold text-amber-400 font-mono">18.5h</div>
+              <div class="text-xs text-slate-400 mt-1 uppercase font-semibold">Average Resolution Time</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- How It Works Section -->
+      <div class="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-slate-800/80">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+          <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider">End-to-End Operational Lifecycle</span>
+          <h2 class="text-3xl sm:text-4xl font-extrabold text-white mt-2">How CivicAI Transforms Municipal Response</h2>
+          <p class="text-sm text-slate-400 mt-3">From citizen report to field verification, every step is powered by transparent algorithms and persistent database integrity.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 relative">
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 font-mono font-bold flex items-center justify-center text-lg mb-4">01</div>
+            <h3 class="text-lg font-bold text-slate-100 mb-2">1. Citizen Lodges Report</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">Multi-step reporting with automatic GPS pin selection, photo attachments, and title classification.</p>
+          </div>
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 relative">
+            <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 font-mono font-bold flex items-center justify-center text-lg mb-4">02</div>
+            <h3 class="text-lg font-bold text-slate-100 mb-2">2. AI Triage &amp; Scoring</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">NLP taxonomy routing, semantic duplicate detection, and 5-factor priority calculation with safety overrides.</p>
+          </div>
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 relative">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 font-mono font-bold flex items-center justify-center text-lg mb-4">03</div>
+            <h3 class="text-lg font-bold text-slate-100 mb-2">3. Officer Dispatched</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">Municipal commissioners review authority action briefs and assign specialized crews within SLA windows.</p>
+          </div>
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 relative">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 font-mono font-bold flex items-center justify-center text-lg mb-4">04</div>
+            <h3 class="text-lg font-bold text-slate-100 mb-2">4. Verified Resolution</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">Field inspectors upload before/after photos, labor hours, and citizens submit feedback or reopen if unsatisfied.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Capabilities Section -->
+      <div class="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-slate-800/80">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+          <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider">Explainable AI Architecture</span>
+          <h2 class="text-3xl sm:text-4xl font-extrabold text-white mt-2">Genuine AI Intelligence Engine</h2>
+          <p class="text-sm text-slate-400 mt-3">No static mockups or fake labels. Every complaint undergoes real NLP classification, semantic similarity, and DBSCAN clustering.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+            <div class="text-2xl mb-3">🧠</div>
+            <h3 class="text-base font-bold text-slate-100 mb-1">Module 1: Automatic Classification</h3>
+            <p class="text-xs text-slate-400 mb-3">Analyzes free-form citizen text, extracts municipal keywords, detects urgency, and routes directly to the correct department.</p>
+            <div class="p-2 rounded-lg bg-slate-900 text-[11px] text-cyan-300 font-mono">Taxonomy: 7 Departments • 35 Subcategories</div>
+          </div>
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+            <div class="text-2xl mb-3">🔍</div>
+            <h3 class="text-base font-bold text-slate-100 mb-1">Module 2: Duplicate Detection</h3>
+            <p class="text-xs text-slate-400 mb-3">Cross-compares text similarity with Haversine GPS distance (< 350m) and temporal proximity to prevent duplicate dispatches.</p>
+            <div class="p-2 rounded-lg bg-slate-900 text-[11px] text-cyan-300 font-mono">Weights: 50% Text • 35% Geo • 15% Category</div>
+          </div>
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+            <div class="text-2xl mb-3">⚖️</div>
+            <h3 class="text-base font-bold text-slate-100 mb-1">Module 3: Explainable Priority</h3>
+            <p class="text-xs text-slate-400 mb-3">Transparent 0-100 score evaluating Safety (30%), Public Impact (25%), Urgency (20%), Concentration (15%), and Frequency (10%).</p>
+            <div class="p-2 rounded-lg bg-slate-900 text-[11px] text-cyan-300 font-mono">Immediate Hazard Life-Safety Overrides</div>
+          </div>
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+            <div class="text-2xl mb-3">📋</div>
+            <h3 class="text-base font-bold text-slate-100 mb-1">Module 4: Action Brief Generator</h3>
+            <p class="text-xs text-slate-400 mb-3">Produces structured, authority-ready operational briefs specifying exact severity, affected commuters, and recommended actions.</p>
+            <div class="p-2 rounded-lg bg-slate-900 text-[11px] text-cyan-300 font-mono">Commissioner-Ready Field Briefs</div>
+          </div>
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800 md:col-span-2">
+            <div class="text-2xl mb-3">📍</div>
+            <h3 class="text-base font-bold text-slate-100 mb-1">Module 5: Geographic Hotspot Intelligence</h3>
+            <p class="text-xs text-slate-400 mb-3">Executes Haversine distance-based DBSCAN clustering to uncover recurring municipal problem zones, category concentrations, and unresolved bottlenecks.</p>
+            <div class="p-2 rounded-lg bg-slate-900 text-[11px] text-cyan-300 font-mono">Eps: 0.65km • Min Samples: 3 • Glowing Map Overlays</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Public Issue Categories Grid -->
+      <div class="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-slate-800/80">
+        <div class="flex items-center justify-between mb-10">
+          <div>
+            <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider">City Services</span>
+            <h2 class="text-3xl font-extrabold text-white mt-1">Public Issue Categories</h2>
+          </div>
+          <button onclick="CivicAI.navigateTo('citizen')" class="text-cyan-400 hover:text-cyan-300 text-xs font-bold">
+            Report in any category &rarr;
+          </button>
+        </div>
+        <div id="landing-category-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <!-- Dynamically populated by LandingController -->
+        </div>
+      </div>
+
+      <!-- Recent Resolved Complaints -->
+      <div class="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-slate-800/80">
+        <div class="text-center max-w-3xl mx-auto mb-12">
+          <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Transparency &amp; Accountability</span>
+          <h2 class="text-3xl font-extrabold text-white mt-1">Recently Resolved Incidents</h2>
+          <p class="text-sm text-slate-400 mt-2">Every resolution is verified with before &amp; after photographic evidence uploaded by field officers.</p>
+        </div>
+        <div id="landing-resolved-preview" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Dynamically populated by LandingController -->
+        </div>
+      </div>
+
+      <!-- Synthetic Citizen Testimonials -->
+      <div class="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-slate-800/80">
+        <div class="text-center max-w-3xl mx-auto mb-12">
+          <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider">Community Voice</span>
+          <h2 class="text-3xl font-extrabold text-white mt-1">Citizen Feedback &amp; Impact</h2>
+          <p class="text-xs text-slate-400 mt-2">(Synthetically generated test samples reflecting actual municipal workflows)</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+            <div class="text-amber-400 text-sm mb-3">⭐⭐⭐⭐⭐</div>
+            <p class="text-xs text-slate-300 italic mb-4">"The open manhole near St. Jude school was flagged as Critical by CivicAI and sealed by the Public Safety team within 3 hours. Incredible responsiveness."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-cyan-600 flex items-center justify-center font-bold text-xs text-white">AM</div>
+              <div>
+                <div class="text-xs font-bold text-slate-200">Alice Morgan</div>
+                <div class="text-[10px] text-slate-500">Ward 12 Resident</div>
+              </div>
+            </div>
+          </div>
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+            <div class="text-amber-400 text-sm mb-3">⭐⭐⭐⭐⭐</div>
+            <p class="text-xs text-slate-300 italic mb-4">"I reported severe waterlogging on Central Market Road. The AI linked my report to 3 neighboring shop owners and dispatched the drainage vacuum truck."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs text-white">BH</div>
+              <div>
+                <div class="text-xs font-bold text-slate-200">Bob Henderson</div>
+                <div class="text-[10px] text-slate-500">Market Association Member</div>
+              </div>
+            </div>
+          </div>
+          <div class="glass-panel p-6 rounded-2xl border border-slate-800">
+            <div class="text-amber-400 text-sm mb-3">⭐⭐⭐⭐⭐</div>
+            <p class="text-xs text-slate-300 italic mb-4">"Being able to see the Before &amp; After photo evidence on the tracker gave me complete confidence that our streetlights were properly rewired."</p>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center font-bold text-xs text-white">CW</div>
+              <div>
+                <div class="text-xs font-bold text-slate-200">Carol Williams</div>
+                <div class="text-[10px] text-slate-500">Tech Corridor Commuter</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ Section -->
+      <div class="py-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-slate-800/80">
+        <div class="text-center mb-12">
+          <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider">Clarifications</span>
+          <h2 class="text-3xl font-extrabold text-white mt-1">Frequently Asked Questions</h2>
+        </div>
+
+        <div class="space-y-4">
+          <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
+            <button onclick="LandingController.toggleFaq(this)" class="w-full p-5 text-left flex items-center justify-between font-bold text-sm text-slate-200 hover:text-cyan-400">
+              <span>How does CivicAI prevent duplicate complaint spamming?</span>
+              <span class="faq-icon text-cyan-400 transition-transform">▼</span>
+            </button>
+            <div class="px-5 pb-5 text-xs text-slate-400 leading-relaxed hidden">
+              Our AI Module 2 runs a composite semantic analysis comparing text similarity (Jaccard + 3-grams) and Haversine geographic distance (< 350 meters) within a 60-day window. If similar, reports are flagged to administrators who can link them without discarding citizen voices.
+            </div>
+          </div>
+          <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
+            <button onclick="LandingController.toggleFaq(this)" class="w-full p-5 text-left flex items-center justify-between font-bold text-sm text-slate-200 hover:text-cyan-400">
+              <span>Can an administrator override AI priority recommendations?</span>
+              <span class="faq-icon text-cyan-400 transition-transform">▼</span>
+            </button>
+            <div class="px-5 pb-5 text-xs text-slate-400 leading-relaxed hidden">
+              Yes! CivicAI is strictly designed for explainable, human-in-the-loop decision making. Administrators can adjust the score or priority level anytime, which is logged with reason explanations in the audit trail.
+            </div>
+          </div>
+          <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
+            <button onclick="LandingController.toggleFaq(this)" class="w-full p-5 text-left flex items-center justify-between font-bold text-sm text-slate-200 hover:text-cyan-400">
+              <span>How are field officers verified when closing complaints?</span>
+              <span class="faq-icon text-cyan-400 transition-transform">▼</span>
+            </button>
+            <div class="px-5 pb-5 text-xs text-slate-400 leading-relaxed hidden">
+              Field officers must submit Before and After photographic evidence along with labor hours and equipment used before marking an issue resolved. Citizens receive an alert and have the right to reopen the complaint if the work is unsatisfactory.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================== -->
+    <!-- VIEW 2: CITIZEN PORTAL -->
+    <!-- =========================================================== -->
+    <section id="view-citizen" class="view-section hidden py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Citizen Header & Stats Strip -->
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Citizen Dashboard</h2>
+          <p class="text-xs text-slate-400 mt-1">Submit civic issues, monitor live resolution progress, and verify municipal action.</p>
+        </div>
+        <button onclick="document.getElementById('report-wizard-section')?.scrollIntoView({ behavior: 'smooth' })" class="px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-glow transition-all">
+          + Lodge New Issue
+        </button>
+      </div>
+
+      <!-- Quick Metrics -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+        <div class="glass-panel p-4 rounded-xl border border-slate-800">
+          <div class="text-xs text-slate-400">Total Submitted</div>
+          <div id="cit-stat-total" class="text-2xl font-mono font-bold text-slate-100 mt-1">0</div>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-slate-800">
+          <div class="text-xs text-slate-400">Pending Review</div>
+          <div id="cit-stat-pending" class="text-2xl font-mono font-bold text-yellow-400 mt-1">0</div>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-slate-800">
+          <div class="text-xs text-slate-400">In Progress</div>
+          <div id="cit-stat-progress" class="text-2xl font-mono font-bold text-cyan-400 mt-1">0</div>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-slate-800">
+          <div class="text-xs text-slate-400">Resolved &amp; Closed</div>
+          <div id="cit-stat-resolved" class="text-2xl font-mono font-bold text-emerald-400 mt-1">0</div>
+        </div>
+      </div>
+
+      <!-- Multi-Step Report Wizard -->
+      <div id="report-wizard-section" class="glass-panel p-6 sm:p-8 rounded-3xl border border-cyan-500/30 mb-12 shadow-2xl">
+        <div class="flex items-center justify-between pb-6 border-b border-slate-800 mb-6">
+          <div>
+            <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider">Citizen Reporting Engine</span>
+            <h3 class="text-xl font-extrabold text-white">Report a Civic Problem</h3>
+          </div>
+          <!-- Wizard Indicators -->
+          <div class="flex items-center gap-2">
+            <div id="step-indicator-1" class="w-8 h-8 rounded-full bg-cyan-500 text-slate-950 flex items-center justify-center font-bold text-xs">1</div>
+            <div class="w-6 h-0.5 bg-slate-700"></div>
+            <div id="step-indicator-2" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 border border-slate-700 flex items-center justify-center font-bold text-xs">2</div>
+            <div class="w-6 h-0.5 bg-slate-700"></div>
+            <div id="step-indicator-3" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 border border-slate-700 flex items-center justify-center font-bold text-xs">3</div>
+          </div>
+        </div>
+
+        <form id="new-complaint-form" onsubmit="event.preventDefault();">
+          
+          <!-- STEP 1: PROBLEM DETAILS -->
+          <div id="report-step-1" class="report-step-content space-y-5">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Complaint Title *</label>
+              <input type="text" id="report-title" placeholder="e.g. Severe waterlogging submerging market road..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Category *</label>
+                <select id="report-category" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
+                  <option value="Roads & Infrastructure">Roads & Infrastructure</option>
+                  <option value="Drainage & Water Management">Drainage & Water Management</option>
+                  <option value="Sanitation">Sanitation</option>
+                  <option value="Electricity & Streetlights">Electricity & Streetlights</option>
+                  <option value="Public Safety">Public Safety</option>
+                  <option value="Water Supply">Water Supply</option>
+                  <option value="Parks & Public Spaces">Parks & Public Spaces</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Subcategory *</label>
+                <input type="text" id="report-subcategory" placeholder="e.g. Severe Waterlogging / Potholes" value="Severe Waterlogging" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Detailed Description *</label>
+              <textarea id="report-description" rows="3" placeholder="Describe the hazard, severity, water depth, traffic impediment, or safety risk..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-cyan-500"></textarea>
+            </div>
+
+            <!-- Multiple Image Upload -->
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Upload Incident Evidence Photos</label>
+              <div class="flex items-center gap-4">
+                <label class="cursor-pointer px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-cyan-400 flex items-center gap-2 transition-all">
+                  <span>📸</span> Choose Photos (Up to 3)
+                  <input type="file" id="report-file-input" accept="image/*" multiple onchange="CitizenController.handleImageUpload(event)" class="hidden">
+                </label>
+                <span class="text-xs text-slate-400">Attach photos for faster AI analysis</span>
+              </div>
+              <div id="report-image-preview" class="flex gap-3 mt-3"></div>
+            </div>
+
+            <div class="flex justify-end pt-4 border-t border-slate-800">
+              <button type="button" onclick="CitizenController.goToStep(2)" class="px-6 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md">
+                Next: Select Location &rarr;
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP 2: LOCATION SELECTION (LEAFLET + GPS) -->
+          <div id="report-step-2" class="report-step-content hidden space-y-5">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Pinpoint Exact Incident Location</label>
+                <p class="text-xs text-slate-400">Click anywhere on the map or drag the pin to set incident coordinates.</p>
+              </div>
+              <button type="button" onclick="CitizenController.detectGpsLocation()" class="px-3.5 py-2 rounded-xl bg-cyan-950 text-cyan-300 border border-cyan-800 hover:bg-cyan-900 text-xs font-bold flex items-center gap-1.5 transition-all">
+                <span>📍</span> Use My Current GPS
+              </button>
+            </div>
+
+            <!-- Leaflet Map Container -->
+            <div id="report-location-map" class="w-full h-72 rounded-2xl border border-slate-700 overflow-hidden shadow-inner"></div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Street Address or Landmark *</label>
+                <input type="text" id="report-address" value="Central Market Road, Commercial Block A" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">GPS Coordinates</label>
+                <div id="report-coords-readout" class="p-3 rounded-xl bg-slate-900 border border-slate-800 font-mono text-xs text-cyan-400 font-bold">
+                  GPS: 12.971598, 77.594566
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-between pt-4 border-t border-slate-800">
+              <button type="button" onclick="CitizenController.goToStep(1)" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs">
+                &larr; Back
+              </button>
+              <button type="button" onclick="CitizenController.goToStep(3)" class="px-6 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md">
+                Next: Review &amp; AI Analysis &rarr;
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP 3: REVIEW & SUBMIT -->
+          <div id="report-step-3" class="report-step-content hidden space-y-5">
+            <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3 text-xs">
+              <h4 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Report Summary Review</h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div><span class="text-slate-400">Title:</span> <strong id="review-title" class="text-slate-100 block"></strong></div>
+                <div><span class="text-slate-400">Category:</span> <strong id="review-cat" class="text-slate-100 block"></strong></div>
+                <div><span class="text-slate-400">Address:</span> <strong id="review-address" class="text-slate-100 block"></strong></div>
+                <div><span class="text-slate-400">GPS Coordinates:</span> <strong id="review-coords" class="font-mono text-cyan-400 block"></strong></div>
+              </div>
+              <div>
+                <span class="text-slate-400">Description:</span>
+                <p id="review-desc" class="text-slate-300 mt-1"></p>
+              </div>
+            </div>
+
+            <!-- Real-time AI Triage Preview -->
+            <div class="glass-panel p-5 rounded-2xl border border-cyan-500/40 bg-cyan-950/20">
+              <div class="flex items-center gap-2 text-xs font-bold text-cyan-400 mb-2">
+                <span>🤖</span> LIVE AI TRIAGE PREVIEW
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-xs">
+                <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                  <span class="text-slate-400 block text-[10px]">Predicted Dept</span>
+                  <strong id="review-ai-dept" class="text-slate-200">Analyzing...</strong>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                  <span class="text-slate-400 block text-[10px]">Urgency</span>
+                  <strong id="review-ai-urgency" class="text-amber-400">Calculating...</strong>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                  <span class="text-slate-400 block text-[10px]">AI Confidence</span>
+                  <strong id="review-ai-confidence" class="text-emerald-400">--%</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-between pt-4 border-t border-slate-800">
+              <button type="button" onclick="CitizenController.goToStep(2)" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs">
+                &larr; Back
+              </button>
+              <button type="button" id="report-submit-btn" onclick="CitizenController.submitComplaint()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs shadow-glow">
+                Confirm &amp; Submit to City Authority
+              </button>
+            </div>
+          </div>
+
+          <!-- SUBMISSION CONFIRMATION SCREEN -->
+          <div id="report-confirmation-screen" class="hidden text-center py-10 space-y-4">
+            <div class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-3xl flex items-center justify-center mx-auto shadow-glow">
+              ✓
+            </div>
+            <h3 class="text-2xl font-extrabold text-white">Complaint Lodged Successfully!</h3>
+            <p class="text-xs text-slate-400 max-w-md mx-auto">Your complaint has been written to the municipal database, AI processed, and assigned a tracking ID.</p>
+            
+            <div class="max-w-md mx-auto p-4 rounded-xl bg-slate-900 border border-cyan-500/40 text-left text-xs space-y-2">
+              <div class="flex justify-between">
+                <span class="text-slate-400">Tracking Reference:</span>
+                <strong id="confirm-tracking-id" class="font-mono text-cyan-400 text-sm"></strong>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Priority Assigned:</span>
+                <strong id="confirm-priority" class="text-amber-400"></strong>
+              </div>
+              <div class="text-slate-400">
+                <span class="block mb-1">AI Action Brief:</span>
+                <p id="confirm-brief" class="font-mono text-[11px] text-slate-300 bg-slate-950 p-2 rounded"></p>
+              </div>
+            </div>
+
+            <div class="flex justify-center gap-3 pt-4">
+              <button onclick="CitizenController.resetReportForm()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs">
+                Report Another Issue
+              </button>
+              <button onclick="CivicAI.navigateTo('citizen')" class="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md">
+                View in My Complaints
+              </button>
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- My Complaints Section -->
+      <div>
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <h3 class="text-xl font-extrabold text-white">My Lodged Complaints</h3>
+          <!-- Filters -->
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <input type="text" id="cit-search-input" onkeyup="CitizenController.applyFilters()" placeholder="Search my reports..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200">
+            <select id="cit-status-filter" onchange="CitizenController.applyFilters()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200">
+              <option value="all">All Statuses</option>
+              <option value="submitted">Submitted</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+            </select>
+            <select id="cit-priority-filter" onchange="CitizenController.applyFilters()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200">
+              <option value="all">All Priorities</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="citizen-complaints-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <!-- Dynamically populated by CitizenController -->
+        </div>
+
+        <div id="citizen-complaints-pagination" class="mt-6"></div>
+      </div>
+    </section>
+
+    <!-- =========================================================== -->
+    <!-- VIEW 3: MUNICIPAL ADMINISTRATION PORTAL -->
+    <!-- =========================================================== -->
+    <section id="view-admin" class="view-section hidden py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Admin Header -->
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded bg-red-950 text-red-400 font-bold text-xs border border-red-500/30">MUNICIPAL HQ</span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Administrative Control Center</h2>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Real-time civic intelligence, dispatch triage, duplicate linking, and SLA enforcement.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="AdminController.resetDemoData()" class="px-3.5 py-2 rounded-xl bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/40 text-xs font-bold transition-all">
+            ↺ Reset Demo Data
+          </button>
+          <button onclick="AdminController.exportCSV()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-400 text-xs font-bold transition-all flex items-center gap-1.5">
+            <span>📥</span> Export CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- 8 Key Administrative KPI Cards (All from Database) -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-8">
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800 text-center">
+          <span class="text-[10px] text-slate-400 uppercase font-semibold block">Total</span>
+          <span id="admin-kpi-total" class="text-xl font-bold font-mono text-cyan-400 mt-0.5 block">0</span>
+        </div>
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800 text-center">
+          <span class="text-[10px] text-slate-400 uppercase font-semibold block">New Today</span>
+          <span id="admin-kpi-today" class="text-xl font-bold font-mono text-emerald-400 mt-0.5 block">0</span>
+        </div>
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800 text-center">
+          <span class="text-[10px] text-slate-400 uppercase font-semibold block">Pending</span>
+          <span id="admin-kpi-pending" class="text-xl font-bold font-mono text-yellow-400 mt-0.5 block">0</span>
+        </div>
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800 text-center">
+          <span class="text-[10px] text-slate-400 uppercase font-semibold block">Critical</span>
+          <span id="admin-kpi-critical" class="text-xl font-bold font-mono text-red-400 mt-0.5 block">0</span>
+        </div>
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800 text-center">
+          <span class="text-[10px] text-slate-400 uppercase font-semibold block">Active</span>
+          <span id="admin-kpi-active" class="text-xl font-bold font-mono text-blue-400 mt-0.5 block">0</span>
+        </div>
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800 text-center">
+          <span class="text-[10px] text-slate-400 uppercase font-semibold block">Resolved</span>
+          <span id="admin-kpi-resolved" class="text-xl font-bold font-mono text-emerald-400 mt-0.5 block">0</span>
+        </div>
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800 text-center">
+          <span class="text-[10px] text-slate-400 uppercase font-semibold block">Rate</span>
+          <span id="admin-kpi-rate" class="text-xl font-bold font-mono text-cyan-300 mt-0.5 block">0%</span>
+        </div>
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800 text-center">
+          <span class="text-[10px] text-slate-400 uppercase font-semibold block">Avg Time</span>
+          <span id="admin-kpi-avg-time" class="text-xl font-bold font-mono text-amber-300 mt-0.5 block">0h</span>
+        </div>
+      </div>
+
+      <!-- Analytics Charts Section -->
+      <div class="glass-panel p-6 rounded-3xl border border-slate-800 mb-8 space-y-6">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div>
+            <h3 class="font-bold text-base text-slate-100">Municipal Analytics &amp; Trends</h3>
+            <p class="text-xs text-slate-400">Database-driven distribution across categories, priorities, and departments.</p>
+          </div>
+          <!-- Date Filter -->
+          <div class="flex items-center gap-2 text-xs">
+            <span class="text-slate-400">Range:</span>
+            <select onchange="AdminController.loadCharts(this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-200">
+              <option value="7">Last 7 Days</option>
+              <option value="30" selected>Last 30 Days</option>
+              <option value="90">Last 90 Days</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="h-60 bg-slate-900/60 p-3 rounded-2xl border border-slate-800 flex flex-col">
+            <span class="text-xs font-bold text-slate-300 mb-2">Category Distribution</span>
+            <div class="flex-1 relative"><canvas id="chart-category"></canvas></div>
+          </div>
+          <div class="h-60 bg-slate-900/60 p-3 rounded-2xl border border-slate-800 flex flex-col">
+            <span class="text-xs font-bold text-slate-300 mb-2">Priority Breakdown</span>
+            <div class="flex-1 relative"><canvas id="chart-priority"></canvas></div>
+          </div>
+          <div class="h-60 bg-slate-900/60 p-3 rounded-2xl border border-slate-800 flex flex-col">
+            <span class="text-xs font-bold text-slate-300 mb-2">Weekly Incident Trends</span>
+            <div class="flex-1 relative"><canvas id="chart-trends"></canvas></div>
+          </div>
+          <div class="h-60 bg-slate-900/60 p-3 rounded-2xl border border-slate-800 flex flex-col">
+            <span class="text-xs font-bold text-slate-300 mb-2">Department Resolution</span>
+            <div class="flex-1 relative"><canvas id="chart-department"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Complaint Management Center (Table) -->
+      <div class="glass-panel p-6 rounded-3xl border border-slate-800 mb-8 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 class="font-bold text-base text-slate-100">Complaint Management Center</h3>
+            <span id="admin-table-count" class="text-xs text-slate-400">Loading reports...</span>
+          </div>
+
+          <!-- Table Filters -->
+          <div class="flex flex-wrap items-center gap-2">
+            <input type="text" id="admin-table-search" onkeyup="AdminController.applyTableFilters()" placeholder="Universal search (ID, title, address)..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 w-52">
+            <select id="admin-filter-category" onchange="AdminController.applyTableFilters()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200">
+              <option value="all">All Categories</option>
+              <option value="Roads & Infrastructure">Roads & Infrastructure</option>
+              <option value="Drainage & Water Management">Drainage</option>
+              <option value="Sanitation">Sanitation</option>
+              <option value="Electricity & Streetlights">Electricity</option>
+              <option value="Public Safety">Safety</option>
+              <option value="Water Supply">Water Supply</option>
+              <option value="Parks & Public Spaces">Parks</option>
+            </select>
+            <select id="admin-filter-status" onchange="AdminController.applyTableFilters()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200">
+              <option value="all">All Status</option>
+              <option value="submitted">Submitted</option>
+              <option value="assigned">Assigned</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="duplicate_linked">Duplicate</option>
+            </select>
+            <select id="admin-filter-priority" onchange="AdminController.applyTableFilters()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200">
+              <option value="all">All Priority</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+            <select id="admin-filter-department" onchange="AdminController.applyTableFilters()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200">
+              <option value="all">All Depts</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Bulk Action Bar -->
+        <div id="admin-bulk-bar" class="hidden p-3 rounded-xl bg-cyan-950/80 border border-cyan-800 flex items-center justify-between text-xs fade-in">
+          <span id="admin-bulk-count" class="font-bold text-cyan-300">0 selected</span>
+          <div class="flex gap-2">
+            <button onclick="AdminController.openAssignModal(null, 'Selected Complaints', 1)" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs">
+              Bulk Assign to Officer
+            </button>
+          </div>
+        </div>
+
+        <!-- Complaints Table -->
+        <div class="overflow-x-auto rounded-xl border border-slate-800">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-900/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                <th class="py-3 px-3 w-8">
+                  <input type="checkbox" onchange="AdminController.toggleSelectAll(this.checked)" class="rounded bg-slate-900 border-slate-700">
+                </th>
+                <th class="py-3 px-3">Tracking ID</th>
+                <th class="py-3 px-3">Title &amp; Category</th>
+                <th class="py-3 px-3">Location &amp; Ward</th>
+                <th class="py-3 px-3">Priority</th>
+                <th class="py-3 px-3">Status</th>
+                <th class="py-3 px-3">Department &amp; Officer</th>
+                <th class="py-3 px-3">Date</th>
+                <th class="py-3 px-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-complaints-tbody">
+              <!-- Dynamically populated by AdminController -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="admin-table-pagination"></div>
+      </div>
+
+      <!-- Department Management & Live Activity Feed Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Department Management -->
+        <div class="lg:col-span-2 glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div>
+              <h3 class="font-bold text-base text-slate-100">Municipal Departments</h3>
+              <p class="text-xs text-slate-400">Operational SLA windows and active officer deployment.</p>
+            </div>
+          </div>
+          <div id="admin-departments-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Dynamically populated by AdminController -->
+          </div>
+        </div>
+
+        <!-- Live Activity Stream -->
+        <div class="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <h3 class="font-bold text-base text-slate-100">Live Activity Feed</h3>
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          </div>
+          <div id="admin-activity-feed" class="space-y-3 max-h-96 overflow-y-auto pr-1">
+            <!-- Dynamically populated by AdminController -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================== -->
+    <!-- VIEW 4: FIELD OFFICER PORTAL -->
+    <!-- =========================================================== -->
+    <section id="view-officer" class="view-section hidden py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Officer Header & Badge -->
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded bg-amber-950 text-amber-400 font-bold text-xs border border-amber-500/30">FIELD CREW DISPATCH</span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Field Officer Workspace</h2>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Accept dispatches, navigate to GPS locations, add progress notes, and upload resolution proof.</p>
+        </div>
+        <div class="text-right">
+          <div id="off-profile-name" class="text-sm font-bold text-slate-200">Officer John Reynolds</div>
+          <div id="off-profile-badge" class="text-xs font-mono text-cyan-400">Badge: ROADS-901</div>
+        </div>
+      </div>
+
+      <!-- Officer Workload Stats -->
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+        <div class="glass-panel p-4 rounded-xl border border-slate-800 text-center">
+          <span class="text-xs text-slate-400">Total Assigned</span>
+          <span id="off-stat-total" class="text-2xl font-mono font-bold text-slate-100 mt-1 block">0</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-slate-800 text-center">
+          <span class="text-xs text-slate-400">Pending Acceptance</span>
+          <span id="off-stat-pending" class="text-2xl font-mono font-bold text-cyan-400 mt-1 block">0</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-slate-800 text-center">
+          <span class="text-xs text-slate-400">In Progress</span>
+          <span id="off-stat-progress" class="text-2xl font-mono font-bold text-amber-400 mt-1 block">0</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-slate-800 text-center">
+          <span class="text-xs text-slate-400">Critical Alerts</span>
+          <span id="off-stat-critical" class="text-2xl font-mono font-bold text-red-400 mt-1 block">0</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-slate-800 text-center">
+          <span class="text-xs text-slate-400">Completed</span>
+          <span id="off-stat-completed" class="text-2xl font-mono font-bold text-emerald-400 mt-1 block">0</span>
+        </div>
+      </div>
+
+      <!-- Task Status Filter Tabs -->
+      <div class="flex gap-2 border-b border-slate-800 pb-3 mb-6 text-xs">
+        <button id="off-tab-btn-assigned" onclick="OfficerController.switchTab('assigned')" class="officer-tab-btn px-4 py-2 rounded-xl font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 transition-all">
+          Pending Acceptance
+        </button>
+        <button id="off-tab-btn-in_progress" onclick="OfficerController.switchTab('in_progress')" class="officer-tab-btn px-4 py-2 rounded-xl font-bold text-slate-400 border border-transparent hover:text-slate-200 transition-all">
+          Active On-Site Work
+        </button>
+        <button id="off-tab-btn-critical" onclick="OfficerController.switchTab('critical')" class="officer-tab-btn px-4 py-2 rounded-xl font-bold text-slate-400 border border-transparent hover:text-slate-200 transition-all">
+          Critical Hazards
+        </button>
+        <button id="off-tab-btn-completed" onclick="OfficerController.switchTab('completed')" class="officer-tab-btn px-4 py-2 rounded-xl font-bold text-slate-400 border border-transparent hover:text-slate-200 transition-all">
+          Verified Completed
+        </button>
+      </div>
+
+      <!-- Task Cards Grid -->
+      <div id="officer-tasks-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Dynamically populated by OfficerController -->
+      </div>
+    </section>
+
+    <!-- =========================================================== -->
+    <!-- VIEW 5: CITY-WIDE INTERACTIVE MAP VIEW -->
+    <!-- =========================================================== -->
+    <section id="view-map" class="view-section hidden py-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <div>
+          <h2 class="text-2xl font-extrabold text-white">City-Wide Incident &amp; Hotspot Map</h2>
+          <p class="text-xs text-slate-400 mt-0.5">DBSCAN geographic clustering overlays and priority-coded incident pins.</p>
+        </div>
+        
+        <!-- Map Controls & Filters -->
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <select id="map-filter-category" onchange="MapViewController.applyFilters()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200">
+            <option value="all">All Categories</option>
+            <option value="Roads & Infrastructure">Roads & Infrastructure</option>
+            <option value="Drainage & Water Management">Drainage</option>
+            <option value="Sanitation">Sanitation</option>
+            <option value="Electricity & Streetlights">Electricity</option>
+            <option value="Public Safety">Safety</option>
+            <option value="Water Supply">Water Supply</option>
+            <option value="Parks & Public Spaces">Parks</option>
+          </select>
+          <select id="map-filter-priority" onchange="MapViewController.applyFilters()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200">
+            <option value="all">All Priorities</option>
+            <option value="critical">Critical Only</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+          </select>
+          <label class="flex items-center gap-1.5 text-cyan-300 font-semibold px-2 py-1 rounded bg-slate-900 border border-slate-700">
+            <input type="checkbox" id="map-toggle-hotspots" checked onchange="MapViewController.applyFilters()" class="rounded bg-slate-900 border-cyan-500">
+            <span>Hotspots</span>
+          </label>
+          <span id="map-displayed-count" class="text-xs text-slate-400 font-mono">Loading...</span>
+        </div>
+      </div>
+
+      <!-- Map & Side Drawer Layout -->
+      <div class="relative w-full h-[600px] rounded-3xl border border-slate-700 overflow-hidden shadow-2xl">
+        <div id="civic-interactive-map" class="w-full h-full"></div>
+
+        <!-- Map Side Info Drawer -->
+        <div id="map-side-drawer" class="hidden absolute top-4 right-4 z-[1000] w-80 glass-panel border border-cyan-500/40 shadow-2xl rounded-2xl fade-in overflow-hidden">
+          <div class="flex items-center justify-between p-3 border-b border-slate-800">
+            <span class="text-xs font-bold text-slate-200">Incident Details</span>
+            <button onclick="MapViewController.closeSideDrawer()" class="text-slate-400 hover:text-white">&times;</button>
+          </div>
+          <div id="map-side-content"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================== -->
+    <!-- VIEW 6: UNIVERSAL COMPLAINT TRACKER -->
+    <!-- =========================================================== -->
+    <section id="view-tracker" class="view-section hidden py-12 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-8">
+        <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider">Public Verification Portal</span>
+        <h2 class="text-3xl font-extrabold text-white mt-1">Universal Complaint Tracker</h2>
+        <p class="text-xs text-slate-400 mt-2">Enter your complaint tracking ID to verify real-time status, AI triage, and photographic evidence.</p>
+      </div>
+
+      <!-- Tracker Search Form -->
+      <div class="glass-panel p-3 rounded-2xl border border-cyan-500/30 flex items-center gap-3 mb-8 shadow-xl">
+        <span class="pl-3 text-slate-400">🔍</span>
+        <input type="text" id="tracker-input-field" placeholder="Enter Tracking ID (e.g. CIV-2026-1000)..." class="flex-1 bg-transparent border-none text-sm text-slate-100 placeholder-slate-500 focus:outline-none">
+        <button onclick="TrackerController.trackComplaint()" class="px-6 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md transition-all">
+          Track Live Status
+        </button>
+      </div>
+
+      <!-- Tracker Results Container -->
+      <div id="tracker-results-container"></div>
+    </section>
+
+  </main>
+
+  <!-- ============================================================= -->
+  <!-- UNIVERSAL MODALS -->
+  <!-- ============================================================= -->
+
+  <!-- AUTHENTICATION MODAL -->
+  <div id="auth-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md items-center justify-center p-4">
+    <div class="glass-panel max-w-md w-full p-6 rounded-3xl border border-slate-700 shadow-2xl relative fade-in">
+      <button onclick="CivicAI.closeModal('auth-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl font-bold">&times;</button>
+
+      <div class="text-center mb-6">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center mx-auto text-2xl mb-2">🏛️</div>
+        <h3 class="text-xl font-extrabold text-white">CivicAI Platform Access</h3>
+        <p class="text-xs text-slate-400">Role-based access for citizens, officers, and administrators.</p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex border-b border-slate-800 mb-6 text-xs">
+        <button id="tab-btn-login" onclick="CivicAI.switchAuthTab('login')" class="flex-1 py-2 text-center font-bold text-cyan-400 border-b-2 border-cyan-400">Sign In</button>
+        <button id="tab-btn-register" onclick="CivicAI.switchAuthTab('register')" class="flex-1 py-2 text-center font-medium text-slate-400 hover:text-slate-200">Register Citizen</button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="auth-login-form" onsubmit="event.preventDefault();" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Email Address</label>
+          <input type="email" id="login-email" placeholder="e.g. admin@civicai.gov" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-100">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Password</label>
+          <input type="password" id="login-password" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-100">
+        </div>
+        <div class="flex justify-between items-center text-xs">
+          <label class="flex items-center gap-1.5 text-slate-400">
+            <input type="checkbox" checked class="rounded bg-slate-900"> Remember me
+          </label>
+          <button type="button" onclick="CivicAI.switchAuthTab('forgot')" class="text-cyan-400 hover:underline">Forgot password?</button>
+        </div>
+        <button type="button" onclick="
+          const email = document.getElementById('login-email').value;
+          const pass = document.getElementById('login-password').value;
+          CivicAI.apiFetch('/auth/login', { method: 'POST', body: JSON.stringify({ email, password: pass }) })
+            .then(res => {
+              CivicAI.setAuth(res.data.user, res.data.token);
+              CivicAI.toast(`Welcome back, ${res.data.user.full_name}`, 'success');
+              CivicAI.closeModal('auth-modal');
+              if (res.data.user.role === 'admin') CivicAI.navigateTo('admin');
+              else if (res.data.user.role === 'officer') CivicAI.navigateTo('officer');
+              else CivicAI.navigateTo('citizen');
+            }).catch(e => CivicAI.toast(e.message, 'error'));
+        " class="w-full py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md">
+          Sign In
+        </button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="auth-register-form" onsubmit="event.preventDefault();" class="space-y-4 hidden">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Full Name</label>
+          <input type="text" id="reg-name" placeholder="Alice Morgan" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-100">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Email Address</label>
+          <input type="email" id="reg-email" placeholder="alice@example.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-100">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Phone Number</label>
+          <input type="text" id="reg-phone" placeholder="+1 (555) 019-2834" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-100">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Password</label>
+          <input type="password" id="reg-password" placeholder="At least 6 characters" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-100">
+        </div>
+        <button type="button" onclick="
+          const email = document.getElementById('reg-email').value;
+          const password = document.getElementById('reg-password').value;
+          const full_name = document.getElementById('reg-name').value;
+          const phone = document.getElementById('reg-phone').value;
+          CivicAI.apiFetch('/auth/register', { method: 'POST', body: JSON.stringify({ email, password, full_name, phone }) })
+            .then(res => {
+              CivicAI.setAuth(res.data.user, res.data.token);
+              CivicAI.toast('Account registered successfully!', 'success');
+              CivicAI.closeModal('auth-modal');
+              CivicAI.navigateTo('citizen');
+            }).catch(e => CivicAI.toast(e.message, 'error'));
+        " class="w-full py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md">
+          Create Citizen Account
+        </button>
+      </form>
+
+      <!-- Forgot Password Form -->
+      <form id="auth-forgot-form" onsubmit="event.preventDefault();" class="space-y-4 hidden">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Enter your registered email</label>
+          <input type="email" id="forgot-email" placeholder="user@example.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-100">
+        </div>
+        <button type="button" onclick="
+          const email = document.getElementById('forgot-email').value;
+          CivicAI.apiFetch('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) })
+            .then(res => CivicAI.toast(res.message, 'info'))
+            .catch(e => CivicAI.toast(e.message, 'error'));
+        " class="w-full py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs">
+          Request Password Reset
+        </button>
+        <button type="button" onclick="CivicAI.switchAuthTab('login')" class="w-full text-center text-xs text-slate-400 hover:underline">
+          Back to Login
+        </button>
+      </form>
+
+      <!-- Demo Quick Logins Footer -->
+      <div class="mt-6 pt-4 border-t border-slate-800 text-center">
+        <span class="text-[10px] text-slate-400 block mb-2 font-bold uppercase tracking-wider">Quick Demo 1-Click Access</span>
+        <div class="flex justify-center gap-2">
+          <button onclick="CivicAI.quickLoginAs('admin')" class="px-2.5 py-1 rounded bg-red-950 text-red-300 border border-red-500/40 text-[11px] font-bold">Admin</button>
+          <button onclick="CivicAI.quickLoginAs('officer')" class="px-2.5 py-1 rounded bg-amber-950 text-amber-300 border border-amber-500/40 text-[11px] font-bold">Officer</button>
+          <button onclick="CivicAI.quickLoginAs('citizen')" class="px-2.5 py-1 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 text-[11px] font-bold">Citizen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPLAINT DETAIL & TIMELINE MODAL -->
+  <div id="complaint-detail-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md items-center justify-center p-4">
+    <div class="glass-panel max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 rounded-3xl border border-slate-700 shadow-2xl relative fade-in">
+      <button onclick="CivicAI.closeModal('complaint-detail-modal')" class="absolute top-5 right-5 text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
+      <div id="complaint-detail-content"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN ASSIGN OFFICER MODAL -->
+  <div id="admin-assign-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md items-center justify-center p-4">
+    <div class="glass-panel max-w-md w-full p-6 rounded-3xl border border-slate-700 shadow-2xl relative fade-in space-y-4">
+      <button onclick="CivicAI.closeModal('admin-assign-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">&times;</button>
+      <input type="hidden" id="assign-target-id">
+      
+      <div>
+        <h4 class="font-bold text-base text-slate-100">Assign Field Officer</h4>
+        <p class="text-xs text-slate-400">Complaint Reference: <strong id="assign-target-tracking" class="text-cyan-400"></strong></p>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Select Qualified Officer</label>
+        <select id="assign-officer-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-200"></select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Dispatch Instructions / Notes</label>
+        <textarea id="assign-notes" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-200">Inspect drainage blockage and clear silt within 24h SLA.</textarea>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="CivicAI.closeModal('admin-assign-modal')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold">Cancel</button>
+        <button onclick="AdminController.confirmAssignment()" class="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold">Confirm Assignment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN PRIORITY OVERRIDE MODAL -->
+  <div id="admin-priority-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md items-center justify-center p-4">
+    <div class="glass-panel max-w-md w-full p-6 rounded-3xl border border-slate-700 shadow-2xl relative fade-in space-y-4">
+      <button onclick="CivicAI.closeModal('admin-priority-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">&times;</button>
+      <input type="hidden" id="priority-target-id">
+      
+      <div>
+        <h4 class="font-bold text-base text-slate-100">Manual Priority Override</h4>
+        <p class="text-xs text-slate-400">Complaint: <strong id="priority-target-tracking" class="text-cyan-400"></strong></p>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Priority Level</label>
+        <select id="priority-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-200">
+          <option value="critical">Critical (Immediate Emergency Hazard)</option>
+          <option value="high">High (24-Hour Urgent Response)</option>
+          <option value="medium">Medium (Routine Municipal Queue)</option>
+          <option value="low">Low (Scheduled Maintenance)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Adjusted Numerical Score (0 - 100)</label>
+        <input type="number" id="priority-score-input" min="0" max="100" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-200 font-mono">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Audit Reason for Override</label>
+        <input type="text" id="priority-reason" value="Commissioner priority override following school zone traffic hazard review." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-200">
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="CivicAI.closeModal('admin-priority-modal')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold">Cancel</button>
+        <button onclick="AdminController.confirmPriorityOverride()" class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold">Save Priority Override</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OFFICER EVIDENCE SUBMISSION MODAL -->
+  <div id="officer-evidence-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md items-center justify-center p-4">
+    <div class="glass-panel max-w-lg w-full p-6 sm:p-8 rounded-3xl border border-slate-700 shadow-2xl relative fade-in space-y-4">
+      <button onclick="CivicAI.closeModal('officer-evidence-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">&times;</button>
+      <input type="hidden" id="evidence-target-id">
+
+      <div>
+        <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Field Verification</span>
+        <h4 class="font-bold text-lg text-white">Submit Resolution Evidence</h4>
+        <p class="text-xs text-slate-400 mt-1">Complaint: <strong id="evidence-target-tracking" class="text-cyan-400"></strong> • <span id="evidence-target-title"></span></p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-center">
+          <span class="text-[10px] text-slate-400 font-bold block mb-1">BEFORE WORK PROOF</span>
+          <img src="/uploads/before_work.svg" class="h-20 w-full object-cover rounded-lg mb-1">
+          <span class="text-[10px] text-emerald-400">✓ Auto-attached</span>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-center">
+          <span class="text-[10px] text-slate-400 font-bold block mb-1">AFTER WORK PROOF</span>
+          <img src="/uploads/after_work.svg" class="h-20 w-full object-cover rounded-lg mb-1">
+          <span class="text-[10px] text-emerald-400">✓ Auto-attached</span>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Detailed Resolution Summary *</label>
+        <textarea id="evidence-summary" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-200">Replaced damaged storm drain grate, cleared 150kg silt blockage, and restored normal drainage flow. Surface restored.</textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Labor Hours Spent</label>
+          <input type="number" id="evidence-hours" value="3.5" step="0.5" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Equipment Used</label>
+          <input type="text" id="evidence-equipment" value="Suction Tanker &amp; Compactor" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <button onclick="CivicAI.closeModal('officer-evidence-modal')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold">Cancel</button>
+        <button onclick="OfficerController.submitEvidence()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md">
+          Verify Resolution &amp; Mark Complete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- PROFESSIONAL FOOTER -->
+  <!-- ============================================================= -->
+  <footer class="glass-nav border-t border-slate-800/80 py-12 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-2xl">🏛️</span>
+            <span class="text-lg font-bold text-white">Civic<span class="gradient-text-cyan">AI</span></span>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed mb-4">
+            Smart Cities. Smarter Decisions. Faster Resolutions.<br>
+            Empowering modern urban municipal corporations through transparent explainable AI triage and verified field execution.
+          </p>
+          <div class="text-[11px] text-cyan-400 font-mono">CivicAI OS v2.4 Enterprise</div>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider mb-3">Portal Interfaces</h4>
+          <ul class="space-y-2 text-xs text-slate-400">
+            <li><button onclick="CivicAI.navigateTo('landing')" class="hover:text-cyan-400">Public Portal</button></li>
+            <li><button onclick="CivicAI.navigateTo('citizen')" class="hover:text-cyan-400">Citizen Reporting</button></li>
+            <li><button onclick="CivicAI.navigateTo('admin')" class="hover:text-cyan-400">Municipal Administration</button></li>
+            <li><button onclick="CivicAI.navigateTo('officer')" class="hover:text-cyan-400">Field Officer Workspace</button></li>
+            <li><button onclick="CivicAI.navigateTo('map')" class="hover:text-cyan-400">Interactive City Map</button></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider mb-3">AI Intelligence</h4>
+          <ul class="space-y-2 text-xs text-slate-400">
+            <li><span>Automatic NLP Classification</span></li>
+            <li><span>Semantic Duplicate Detection</span></li>
+            <li><span>Explainable 5-Factor Priority</span></li>
+            <li><span>Commissioner Action Briefs</span></li>
+            <li><span>DBSCAN Geographic Hotspots</span></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider mb-3">Demo Credentials</h4>
+          <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs space-y-1.5 text-slate-300 font-mono">
+            <div><span class="text-red-400">Admin:</span> admin@civicai.gov / Admin@1234</div>
+            <div><span class="text-amber-400">Officer:</span> officer.john@civicai.gov / Officer@1234</div>
+            <div><span class="text-cyan-400">Citizen:</span> citizen.alice@example.com / Citizen@1234</div>
+          </div>
+          <p class="text-[10px] text-slate-500 mt-2">Or use the 1-click 'Demo Roles' switcher at the top right.</p>
+        </div>
+      </div>
+
+      <div class="pt-6 border-t border-slate-800/80 flex flex-wrap items-center justify-between text-xs text-slate-500">
+        <div>&copy; 2026 CivicAI Smart Civic Management Platform. All rights reserved.</div>
+        <div class="flex gap-4">
+          <a href="#" class="hover:text-slate-400">Privacy Policy</a>
+          <a href="#" class="hover:text-slate-400">Terms of Service</a>
+          <a href="#" class="hover:text-slate-400">Municipal API Docs</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Core JavaScript Framework & Controllers -->
+  <script src="/js/app.js"></script>
+  <script src="/js/landing.js"></script>
+  <script src="/js/citizen.js"></script>
+  <script src="/js/admin.js"></script>
+  <script src="/js/officer.js"></script>
+  <script src="/js/map_view.js"></script>
+  <script src="/js/tracker.js"></script>
+
+</body>
+</html>

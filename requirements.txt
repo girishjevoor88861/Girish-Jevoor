@@ -1,0 +1,3 @@
+# CivicAI - Python Dependencies
+# CivicAI uses the robust Python standard library (http.server, sqlite3, hashlib, json, math)
+# Zero external pip packages required for maximum portability and zero build failures.
